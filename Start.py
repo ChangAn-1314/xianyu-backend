@@ -413,12 +413,16 @@ def _check_and_install_playwright():
     return playwright_installed
 
 # 检查并安装Playwright浏览器
-try:
-    _check_and_install_playwright()
-except Exception as e:
-    print(f"{_WARN} Playwright浏览器检查失败: {e}")
-    print("   程序将继续启动，但Playwright功能可能不可用")
-    # 继续启动，不影响主程序运行
+if os.getenv('SKIP_PLAYWRIGHT_INSTALL', '').lower() in ('1', 'true', 'yes'):
+    print(f"{_INFO} 跳过Playwright浏览器安装（SKIP_PLAYWRIGHT_INSTALL已设置）")
+    print(f"{_INFO} 将使用系统已安装的Chromium浏览器")
+else:
+    try:
+        _check_and_install_playwright()
+    except Exception as e:
+        print(f"{_WARN} Playwright浏览器检查失败: {e}")
+        print("   程序将继续启动，但Playwright功能可能不可用")
+        # 继续启动，不影响主程序运行
 
 # ==================== 现在可以安全地导入其他模块 ====================
 import asyncio
