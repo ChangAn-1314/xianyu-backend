@@ -23,12 +23,19 @@ class CookieManager:
     def _load_from_db(self):
         """从数据库加载所有Cookie、关键字和状态"""
         try:
-            # 加载所有Cookie
-            self.cookies = db_manager.get_all_cookies()
+            # 加载所有Cookie（get_all_cookies返回list[dict]，需要转为Dict[str, str]）
+            cookies_list = db_manager.get_all_cookies()
+            if isinstance(cookies_list, list):
+                self.cookies = {c['id']: c['value'] for c in cookies_list if isinstance(c, dict) and 'id' in c and 'value' in c}
+            elif isinstance(cookies_list, dict):
+                self.cookies = cookies_list
+            else:
+                self.cookies = {}
             # 加载所有关键字
             self.keywords = db_manager.get_all_keywords()
             # 加载所有Cookie状态（默认启用）
-            self.cookie_status = db_manager.get_all_cookie_status()
+            cookie_status_raw = db_manager.get_all_cookie_status()
+            self.cookie_status = cookie_status_raw if isinstance(cookie_status_raw, dict) else {}
             # 加载所有auto_confirm设置
             self.auto_confirm_settings = {}
             for cookie_id in self.cookies.keys():
