@@ -1,11 +1,12 @@
-# Fly.io 专用 Dockerfile（无前端构建阶段）
+# 阿里云 ECS 部署 Dockerfile（无前端，国内镜像优化）
 FROM python:3.11-slim-bookworm AS base
 
 ENV PYTHONUNBUFFERED=1 \
     PYTHONDONTWRITEBYTECODE=1 \
     TZ=Asia/Shanghai \
     DOCKER_ENV=true \
-    PLAYWRIGHT_BROWSERS_PATH=/ms-playwright
+    PLAYWRIGHT_BROWSERS_PATH=/ms-playwright \
+    PLAYWRIGHT_SKIP_BROWSER_DOWNLOAD=1
 
 WORKDIR /app
 
@@ -24,7 +25,7 @@ ENV VIRTUAL_ENV=/opt/venv
 ENV PATH="$VIRTUAL_ENV/bin:/usr/local/bin:/usr/local/sbin:/usr/bin:/usr/sbin:/bin:/sbin"
 
 COPY requirements.txt .
-RUN pip install --no-cache-dir -r requirements.txt
+RUN pip install --no-cache-dir -r requirements.txt -i https://pypi.tuna.tsinghua.edu.cn/simple
 
 COPY . .
 
@@ -85,8 +86,14 @@ COPY --from=builder /app /app
 ENV VIRTUAL_ENV=/opt/venv
 ENV PATH="$VIRTUAL_ENV/bin:/usr/local/bin:/usr/local/sbin:/usr/bin:/usr/sbin:/bin:/sbin"
 
-RUN playwright install chromium && \
-    playwright install-deps chromium
+# 使用系统 chromium，创建 Playwright 期望的目录结构
+RUN CHROMIUM_PATH=$(which chromium || which chromium-browser) && \
+    echo "System Chromium at: $CHROMIUM_PATH" && \
+    CHROMIUM_VERSION=$($CHROMIUM_PATH --version | grep -oP '\d+') && \
+    mkdir -p /ms-playwright/chromium-*/chrome-linux && \
+    playwright install-deps chromium 2>/dev/null || true && \
+    # 设置环境变量让 Playwright 使用系统 Chromium
+    echo "CHROMIUM_PATH=$CHROMIUM_PATH" > /app/.chromium_path
 
 RUN mkdir -p /app/logs /app/data /app/backups /app/static/uploads/images && \
     chmod 777 /app/logs /app/data /app/backups /app/static/uploads /app/static/uploads/images
