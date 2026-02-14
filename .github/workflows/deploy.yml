@@ -1,0 +1,28 @@
+name: Deploy to ECS
+
+on:
+  push:
+    branches: [main]
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Deploy via SSH
+        uses: appleboy/ssh-action@v1
+        with:
+          host: ${{ secrets.ECS_HOST }}
+          username: ${{ secrets.ECS_USER }}
+          password: ${{ secrets.ECS_PASSWORD }}
+          script: |
+            cd /root/xianyu-backend
+            git pull origin main
+            docker build -t xianyu-backend:latest .
+            docker rm -f xianyu-backend
+            docker run -d \
+              --name xianyu-backend \
+              --env-file .env \
+              -p 127.0.0.1:8081:8080 \
+              --restart unless-stopped \
+              xianyu-backend:latest
+            echo "Backend deployed at $(date)"
