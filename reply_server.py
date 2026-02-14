@@ -1410,12 +1410,13 @@ def get_cookies_details(current_user: Dict[str, Any] = Depends(get_current_user)
     user_cookies = db_manager.get_all_cookies(user_id)
 
     result = []
-    for cookie_id, cookie_value in user_cookies.items():
+    for cookie_data in user_cookies:
+        cookie_id = cookie_data.get('id', '')
+        cookie_value = cookie_data.get('value', '')
         cookie_enabled = cookie_manager.manager.get_cookie_status(cookie_id)
-        auto_confirm = db_manager.get_auto_confirm(cookie_id)
-        # 获取备注信息
-        cookie_details = db_manager.get_cookie_details(cookie_id)
-        remark = cookie_details.get('remark', '') if cookie_details else ''
+        auto_confirm = cookie_data.get('auto_confirm', False)
+        remark = cookie_data.get('remark', '')
+        pause_duration = cookie_data.get('pause_duration', 10)
 
         result.append({
             'id': cookie_id,
@@ -1423,7 +1424,7 @@ def get_cookies_details(current_user: Dict[str, Any] = Depends(get_current_user)
             'enabled': cookie_enabled,
             'auto_confirm': auto_confirm,
             'remark': remark,
-            'pause_duration': cookie_details.get('pause_duration', 10) if cookie_details else 10
+            'pause_duration': pause_duration
         })
     return result
 
