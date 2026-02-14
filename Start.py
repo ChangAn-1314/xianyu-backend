@@ -446,15 +446,9 @@ def _start_api_server():
     """后台线程启动 FastAPI 服务"""
     api_conf = AUTO_REPLY.get('api', {})
 
-    # 优先使用环境变量配置
-    host = os.getenv('API_HOST', '127.0.0.1')  # 默认仅绑定本地，Docker环境请设置API_HOST=0.0.0.0
-    port = int(os.getenv('API_PORT', '8080'))  # 默认端口8080
-
-    # 如果配置文件中有特定配置，则使用配置文件
-    if 'host' in api_conf:
-        host = api_conf['host']
-    if 'port' in api_conf:
-        port = api_conf['port']
+    # 先从配置文件加载默认值
+    host = api_conf.get('host', '127.0.0.1')
+    port = api_conf.get('port', 8080)
 
     # 兼容旧的URL配置方式
     if 'url' in api_conf and 'host' not in api_conf and 'port' not in api_conf:
@@ -463,6 +457,12 @@ def _start_api_server():
         if parsed.hostname and parsed.hostname != 'localhost':
             host = parsed.hostname
         port = parsed.port or 8080
+
+    # 环境变量优先级最高（Docker环境请设置API_HOST=0.0.0.0）
+    if os.getenv('API_HOST'):
+        host = os.getenv('API_HOST')
+    if os.getenv('API_PORT'):
+        port = int(os.getenv('API_PORT'))
 
     logger.info(f"启动Web服务器: http://{host}:{port}")
     # 在后台线程中创建独立事件循环并直接运行 server.serve()
