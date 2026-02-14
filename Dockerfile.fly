@@ -10,6 +10,14 @@ ENV PYTHONUNBUFFERED=1 \
 
 WORKDIR /app
 
+# 替换为中科大镜像源
+RUN if [ -f /etc/apt/sources.list.d/debian.sources ]; then \
+        sed -i 's/deb.debian.org/mirrors.ustc.edu.cn/g' /etc/apt/sources.list.d/debian.sources; \
+    fi && \
+    if [ -f /etc/apt/sources.list ]; then \
+        sed -i 's/deb.debian.org/mirrors.ustc.edu.cn/g' /etc/apt/sources.list; \
+    fi
+
 # ==================== Python Builder Stage ====================
 FROM base AS builder
 
@@ -33,6 +41,14 @@ COPY . .
 FROM base AS runtime
 
 ENV NODE_PATH=/usr/lib/node_modules
+
+# 替换为中科大镜像源
+RUN if [ -f /etc/apt/sources.list.d/debian.sources ]; then \
+        sed -i 's/deb.debian.org/mirrors.ustc.edu.cn/g' /etc/apt/sources.list.d/debian.sources; \
+    fi && \
+    if [ -f /etc/apt/sources.list ]; then \
+        sed -i 's/deb.debian.org/mirrors.ustc.edu.cn/g' /etc/apt/sources.list; \
+    fi
 
 RUN apt-get update && \
     apt-get install -y --no-install-recommends \
@@ -68,7 +84,7 @@ RUN apt-get update && \
         libxft2 \
         libxinerama1 \
         libxtst6 \
-        libappindicator3-1 \
+        libayatana-appindicator3-1 \
         libx11-xcb1 \
         libxfixes3 \
         xdg-utils \
