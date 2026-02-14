@@ -42,8 +42,7 @@ KEYWORDS_FILE = Path(__file__).parent / "回复关键字.txt"
 
 # 简单的用户认证配置
 ADMIN_USERNAME = "admin"
-DEFAULT_ADMIN_PASSWORD = "admin123"  # 系统初始化时的默认密码 [安全警告: 首次登录后必须修改]
-_DEFAULT_PASSWORD_SHA256 = hashlib.sha256("admin123".encode()).hexdigest()  # 旧版SHA256格式的默认密码哈希
+_DEFAULT_PASSWORD_SHA256 = hashlib.sha256(b"admin123").hexdigest()  # 用于检测是否仍使用默认密码
 
 def _is_default_password(password_hash: str) -> bool:
     """检测是否仍使用默认密码admin123（兼容SHA256和bcrypt两种格式）"""
@@ -337,8 +336,8 @@ app.add_middleware(
     CORSMiddleware,
     allow_origins=cors_origins,
     allow_credentials=True,
-    allow_methods=["*"],
-    allow_headers=["*"],
+    allow_methods=["GET", "POST", "PUT", "DELETE", "OPTIONS"],
+    allow_headers=["Authorization", "Content-Type", "Accept"],
     expose_headers=["Content-Disposition"],  # 支持文件下载
 )
 logger.info(f"CORS已配置，允许域名: {cors_origins}")
