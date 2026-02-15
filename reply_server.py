@@ -2400,7 +2400,7 @@ async def process_qr_login_cookies(cookies: str, unb: str, current_user: Dict[st
                 # 从数据库获取刚刚保存的真实cookie
                 updated_cookie_info = db_manager.get_cookie_by_id(account_id)
                 if updated_cookie_info:
-                    real_cookies = updated_cookie_info['cookies_str']
+                    real_cookies = updated_cookie_info['value']
                     log_with_user('info', f"已获取真实cookie，长度: {len(real_cookies)}", current_user)
 
                     # 第二步：将真实cookie添加到cookie_manager（如果是新账号）或更新现有账号
@@ -2519,7 +2519,7 @@ async def refresh_cookies_from_qr_login(
                 updated_cookie_info = db_manager.get_cookie_by_id(cookie_id)
                 if updated_cookie_info:
                     # refresh_cookies_from_qr_login 已经保存到数据库了，这里不需要再保存
-                    cookie_manager.manager.update_cookie(cookie_id, updated_cookie_info['cookies_str'], save_to_db=False)
+                    cookie_manager.manager.update_cookie(cookie_id, updated_cookie_info['value'], save_to_db=False)
                     log_with_user('info', f"已更新cookie_manager中的cookie: {cookie_id}", current_user)
 
             return {
@@ -4856,7 +4856,7 @@ async def get_all_items_from_account(request: dict, _: None = Depends(require_au
         if not cookie_info:
             return {"success": False, "message": "未找到指定的账号信息"}
 
-        cookies_str = cookie_info.get('cookies_str', '')
+        cookies_str = cookie_info.get('value', '')
         if not cookies_str:
             return {"success": False, "message": "账号cookie信息为空"}
 
@@ -4922,7 +4922,7 @@ async def get_items_by_page(request: dict, _: None = Depends(require_auth)):
         if not account:
             return {"success": False, "message": "账号不存在"}
 
-        cookies_str = account['cookies_str']
+        cookies_str = account.get('value', '')
         if not cookies_str:
             return {"success": False, "message": "账号cookies为空"}
 
