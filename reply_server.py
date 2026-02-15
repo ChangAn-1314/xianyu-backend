@@ -398,7 +398,7 @@ async def health_check():
         # 检查数据库连接
         from db_manager import db_manager
         try:
-            db_manager.get_all_cookies()
+            db_manager.get_all_cookies_dict()
             db_status = "ok"
         except Exception:
             db_status = "error"
@@ -1394,7 +1394,7 @@ def list_cookies(current_user: Dict[str, Any] = Depends(get_current_user)):
     # 获取当前用户的cookies
     user_id = current_user['user_id']
     from db_manager import db_manager
-    user_cookies = db_manager.get_all_cookies(user_id)
+    user_cookies = db_manager.get_all_cookies_dict(user_id)
     return list(user_cookies.keys())
 
 
@@ -1441,10 +1441,10 @@ def add_cookie(item: CookieIn, current_user: Dict[str, Any] = Depends(get_curren
         log_with_user('info', f"尝试添加Cookie: {item.id}, 当前用户ID: {user_id}, 用户名: {current_user.get('username', 'unknown')}", current_user)
 
         # 检查cookie是否已存在且属于其他用户
-        existing_cookies = db_manager.get_all_cookies()
+        existing_cookies = db_manager.get_all_cookies_dict()
         if item.id in existing_cookies:
             # 检查是否属于当前用户
-            user_cookies = db_manager.get_all_cookies(user_id)
+            user_cookies = db_manager.get_all_cookies_dict(user_id)
             if item.id not in user_cookies:
                 log_with_user('warning', f"Cookie ID冲突: {item.id} 已被其他用户使用", current_user)
                 raise HTTPException(status_code=400, detail="该Cookie ID已被其他用户使用")
@@ -1478,7 +1478,7 @@ def update_cookie_login_info(cid: str, update_data: AccountLoginInfoUpdate, curr
         # 检查cookie是否属于当前用户
         user_id = current_user['user_id']
         from db_manager import db_manager
-        user_cookies = db_manager.get_all_cookies(user_id)
+        user_cookies = db_manager.get_all_cookies_dict(user_id)
 
         if cid not in user_cookies:
             raise HTTPException(status_code=403, detail="无权限操作该Cookie")
@@ -1511,7 +1511,7 @@ def update_cookie(cid: str, item: CookieIn, current_user: Dict[str, Any] = Depen
         # 检查cookie是否属于当前用户
         user_id = current_user['user_id']
         from db_manager import db_manager
-        user_cookies = db_manager.get_all_cookies(user_id)
+        user_cookies = db_manager.get_all_cookies_dict(user_id)
 
         if cid not in user_cookies:
             raise HTTPException(status_code=403, detail="无权限操作该Cookie")
@@ -1557,7 +1557,7 @@ def update_cookie_account_info(cid: str, info: CookieAccountInfo, current_user: 
         # 检查cookie是否属于当前用户
         user_id = current_user['user_id']
         from db_manager import db_manager
-        user_cookies = db_manager.get_all_cookies(user_id)
+        user_cookies = db_manager.get_all_cookies_dict(user_id)
 
         if cid not in user_cookies:
             raise HTTPException(status_code=403, detail="无权限操作该Cookie")
@@ -1600,7 +1600,7 @@ def get_cookie_account_details(cid: str, current_user: Dict[str, Any] = Depends(
         # 检查cookie是否属于当前用户
         user_id = current_user['user_id']
         from db_manager import db_manager
-        user_cookies = db_manager.get_all_cookies(user_id)
+        user_cookies = db_manager.get_all_cookies_dict(user_id)
 
         if cid not in user_cookies:
             raise HTTPException(status_code=403, detail="无权限操作该Cookie")
@@ -1808,7 +1808,7 @@ async def _execute_password_login(session_id: str, account_id: str, account: str
                 log_with_user('info', f"账号密码登录成功，获取到 {len(cookies_dict)} 个Cookie字段: {account_id}", current_user)
                 
                 # 检查是否已存在相同账号ID的Cookie
-                existing_cookies = db_manager.get_all_cookies(user_id)
+                existing_cookies = db_manager.get_all_cookies_dict(user_id)
                 is_new_account = account_id not in existing_cookies
                 
                 # 保存账号密码和Cookie到数据库
@@ -2341,7 +2341,7 @@ async def process_qr_login_cookies(cookies: str, unb: str, current_user: Dict[st
         user_id = current_user['user_id']
 
         # 检查是否已存在相同unb的账号
-        existing_cookies = db_manager.get_all_cookies(user_id)
+        existing_cookies = db_manager.get_all_cookies_dict(user_id)
         existing_account_id = None
 
         for account_id, cookie_value in existing_cookies.items():
@@ -2632,7 +2632,7 @@ def update_cookie_status(cid: str, status_data: CookieStatusIn, current_user: Di
         # 检查cookie是否属于当前用户
         user_id = current_user['user_id']
         from db_manager import db_manager
-        user_cookies = db_manager.get_all_cookies(user_id)
+        user_cookies = db_manager.get_all_cookies_dict(user_id)
 
         if cid not in user_cookies:
             raise HTTPException(status_code=403, detail="无权限操作该Cookie")
@@ -2654,7 +2654,7 @@ def get_default_reply(cid: str, current_user: Dict[str, Any] = Depends(get_curre
     try:
         # 检查cookie是否属于当前用户
         user_id = current_user['user_id']
-        user_cookies = db_manager.get_all_cookies(user_id)
+        user_cookies = db_manager.get_all_cookies_dict(user_id)
 
         if cid not in user_cookies:
             raise HTTPException(status_code=403, detail="无权限访问该Cookie")
@@ -2677,7 +2677,7 @@ def update_default_reply(cid: str, reply_data: DefaultReplyIn, current_user: Dic
     try:
         # 检查cookie是否属于当前用户
         user_id = current_user['user_id']
-        user_cookies = db_manager.get_all_cookies(user_id)
+        user_cookies = db_manager.get_all_cookies_dict(user_id)
 
         if cid not in user_cookies:
             raise HTTPException(status_code=403, detail="无权限操作该Cookie")
@@ -2697,7 +2697,7 @@ def get_all_default_replies(current_user: Dict[str, Any] = Depends(get_current_u
     try:
         # 只返回当前用户的默认回复设置
         user_id = current_user['user_id']
-        user_cookies = db_manager.get_all_cookies(user_id)
+        user_cookies = db_manager.get_all_cookies_dict(user_id)
 
         all_replies = db_manager.get_all_default_replies()
         # 过滤只属于当前用户的回复设置
@@ -2714,7 +2714,7 @@ def delete_default_reply(cid: str, current_user: Dict[str, Any] = Depends(get_cu
     try:
         # 检查cookie是否属于当前用户
         user_id = current_user['user_id']
-        user_cookies = db_manager.get_all_cookies(user_id)
+        user_cookies = db_manager.get_all_cookies_dict(user_id)
 
         if cid not in user_cookies:
             raise HTTPException(status_code=403, detail="无权限操作该Cookie")
@@ -2737,7 +2737,7 @@ def clear_default_reply_records(cid: str, current_user: Dict[str, Any] = Depends
     try:
         # 检查cookie是否属于当前用户
         user_id = current_user['user_id']
-        user_cookies = db_manager.get_all_cookies(user_id)
+        user_cookies = db_manager.get_all_cookies_dict(user_id)
 
         if cid not in user_cookies:
             raise HTTPException(status_code=403, detail="无权限操作该Cookie")
@@ -2868,7 +2868,7 @@ def get_all_message_notifications(current_user: Dict[str, Any] = Depends(get_cur
     try:
         # 只返回当前用户的消息通知配置
         user_id = current_user['user_id']
-        user_cookies = db_manager.get_all_cookies(user_id)
+        user_cookies = db_manager.get_all_cookies_dict(user_id)
 
         all_notifications = db_manager.get_all_message_notifications()
         # 过滤只属于当前用户的通知配置
@@ -2885,7 +2885,7 @@ def get_account_notifications(cid: str, current_user: Dict[str, Any] = Depends(g
     try:
         # 检查cookie是否属于当前用户
         user_id = current_user['user_id']
-        user_cookies = db_manager.get_all_cookies(user_id)
+        user_cookies = db_manager.get_all_cookies_dict(user_id)
 
         if cid not in user_cookies:
             raise HTTPException(status_code=403, detail="无权限访问该Cookie")
@@ -2904,7 +2904,7 @@ def set_message_notification(cid: str, notification_data: MessageNotificationIn,
     try:
         # 检查cookie是否属于当前用户
         user_id = current_user['user_id']
-        user_cookies = db_manager.get_all_cookies(user_id)
+        user_cookies = db_manager.get_all_cookies_dict(user_id)
 
         if cid not in user_cookies:
             raise HTTPException(status_code=403, detail="无权限操作该Cookie")
@@ -3133,7 +3133,7 @@ def remove_cookie(cid: str, current_user: Dict[str, Any] = Depends(get_current_u
         # 检查cookie是否属于当前用户
         user_id = current_user['user_id']
         from db_manager import db_manager
-        user_cookies = db_manager.get_all_cookies(user_id)
+        user_cookies = db_manager.get_all_cookies_dict(user_id)
 
         if cid not in user_cookies:
             raise HTTPException(status_code=403, detail="无权限操作该Cookie")
@@ -3167,7 +3167,7 @@ def update_auto_confirm(cid: str, update_data: AutoConfirmUpdate, current_user: 
         # 检查cookie是否属于当前用户
         user_id = current_user['user_id']
         from db_manager import db_manager
-        user_cookies = db_manager.get_all_cookies(user_id)
+        user_cookies = db_manager.get_all_cookies_dict(user_id)
 
         if cid not in user_cookies:
             raise HTTPException(status_code=403, detail="无权限操作该Cookie")
@@ -3201,7 +3201,7 @@ def get_auto_confirm(cid: str, current_user: Dict[str, Any] = Depends(get_curren
         # 检查cookie是否属于当前用户
         user_id = current_user['user_id']
         from db_manager import db_manager
-        user_cookies = db_manager.get_all_cookies(user_id)
+        user_cookies = db_manager.get_all_cookies_dict(user_id)
 
         if cid not in user_cookies:
             raise HTTPException(status_code=403, detail="无权限操作该Cookie")
@@ -3227,7 +3227,7 @@ def update_cookie_remark(cid: str, update_data: RemarkUpdate, current_user: Dict
         # 检查cookie是否属于当前用户
         user_id = current_user['user_id']
         from db_manager import db_manager
-        user_cookies = db_manager.get_all_cookies(user_id)
+        user_cookies = db_manager.get_all_cookies_dict(user_id)
 
         if cid not in user_cookies:
             raise HTTPException(status_code=403, detail="无权限操作该Cookie")
@@ -3257,7 +3257,7 @@ def get_cookie_remark(cid: str, current_user: Dict[str, Any] = Depends(get_curre
         # 检查cookie是否属于当前用户
         user_id = current_user['user_id']
         from db_manager import db_manager
-        user_cookies = db_manager.get_all_cookies(user_id)
+        user_cookies = db_manager.get_all_cookies_dict(user_id)
 
         if cid not in user_cookies:
             raise HTTPException(status_code=403, detail="无权限操作该Cookie")
@@ -3286,7 +3286,7 @@ def update_cookie_pause_duration(cid: str, update_data: PauseDurationUpdate, cur
         # 检查cookie是否属于当前用户
         user_id = current_user['user_id']
         from db_manager import db_manager
-        user_cookies = db_manager.get_all_cookies(user_id)
+        user_cookies = db_manager.get_all_cookies_dict(user_id)
 
         if cid not in user_cookies:
             raise HTTPException(status_code=403, detail="无权限操作该Cookie")
@@ -3320,7 +3320,7 @@ def get_cookie_pause_duration(cid: str, current_user: Dict[str, Any] = Depends(g
         # 检查cookie是否属于当前用户
         user_id = current_user['user_id']
         from db_manager import db_manager
-        user_cookies = db_manager.get_all_cookies(user_id)
+        user_cookies = db_manager.get_all_cookies_dict(user_id)
 
         if cid not in user_cookies:
             raise HTTPException(status_code=403, detail="无权限操作该Cookie")
@@ -3352,7 +3352,7 @@ def get_keywords(cid: str, current_user: Dict[str, Any] = Depends(get_current_us
     # 检查cookie是否属于当前用户
     user_id = current_user['user_id']
     from db_manager import db_manager
-    user_cookies = db_manager.get_all_cookies(user_id)
+    user_cookies = db_manager.get_all_cookies_dict(user_id)
 
     if cid not in user_cookies:
         raise HTTPException(status_code=403, detail="无权限访问该Cookie")
@@ -3382,7 +3382,7 @@ def get_keywords_with_item_id(cid: str, current_user: Dict[str, Any] = Depends(g
     # 检查cookie是否属于当前用户
     user_id = current_user['user_id']
     from db_manager import db_manager
-    user_cookies = db_manager.get_all_cookies(user_id)
+    user_cookies = db_manager.get_all_cookies_dict(user_id)
 
     if cid not in user_cookies:
         raise HTTPException(status_code=403, detail="无权限访问该Cookie")
@@ -3412,7 +3412,7 @@ def update_keywords(cid: str, body: KeywordIn, current_user: Dict[str, Any] = De
     # 检查cookie是否属于当前用户
     user_id = current_user['user_id']
     from db_manager import db_manager
-    user_cookies = db_manager.get_all_cookies(user_id)
+    user_cookies = db_manager.get_all_cookies_dict(user_id)
 
     if cid not in user_cookies:
         log_with_user('warning', f"尝试操作其他用户的Cookie关键字: {cid}", current_user)
@@ -3435,7 +3435,7 @@ def update_keywords_with_item_id(cid: str, body: KeywordWithItemIdIn, current_us
     # 检查cookie是否属于当前用户
     user_id = current_user['user_id']
     from db_manager import db_manager
-    user_cookies = db_manager.get_all_cookies(user_id)
+    user_cookies = db_manager.get_all_cookies_dict(user_id)
 
     if cid not in user_cookies:
         log_with_user('warning', f"尝试操作其他用户的Cookie关键字: {cid}", current_user)
@@ -3520,7 +3520,7 @@ def get_items_list(cid: str, current_user: Dict[str, Any] = Depends(get_current_
     # 检查cookie是否属于当前用户
     user_id = current_user['user_id']
     from db_manager import db_manager
-    user_cookies = db_manager.get_all_cookies(user_id)
+    user_cookies = db_manager.get_all_cookies_dict(user_id)
 
     if cid not in user_cookies:
         raise HTTPException(status_code=403, detail="无权限访问该Cookie")
@@ -3553,7 +3553,7 @@ def export_keywords(cid: str, current_user: Dict[str, Any] = Depends(get_current
     # 检查cookie是否属于当前用户
     user_id = current_user['user_id']
     from db_manager import db_manager
-    user_cookies = db_manager.get_all_cookies(user_id)
+    user_cookies = db_manager.get_all_cookies_dict(user_id)
 
     if cid not in user_cookies:
         raise HTTPException(status_code=403, detail="无权限访问该Cookie")
@@ -3640,7 +3640,7 @@ async def import_keywords(cid: str, file: UploadFile = File(...), current_user: 
     # 检查cookie是否属于当前用户
     user_id = current_user['user_id']
     from db_manager import db_manager
-    user_cookies = db_manager.get_all_cookies(user_id)
+    user_cookies = db_manager.get_all_cookies_dict(user_id)
 
     if cid not in user_cookies:
         raise HTTPException(status_code=403, detail="无权限访问该Cookie")
@@ -4292,7 +4292,7 @@ def get_all_items(current_user: Dict[str, Any] = Depends(get_current_user)):
         # 只返回当前用户的商品信息
         user_id = current_user['user_id']
         from db_manager import db_manager
-        user_cookies = db_manager.get_all_cookies(user_id)
+        user_cookies = db_manager.get_all_cookies_dict(user_id)
 
         all_items = []
         for cookie_id in user_cookies.keys():
@@ -4383,7 +4383,7 @@ async def check_valid_cookies(
         from db_manager import db_manager
 
         # 获取所有cookies
-        all_cookies = db_manager.get_all_cookies()
+        all_cookies = db_manager.get_all_cookies_dict()
 
         # 检查启用状态和有效性
         valid_cookies = []
@@ -4471,7 +4471,7 @@ def get_items_by_cookie(cookie_id: str, current_user: Dict[str, Any] = Depends(g
         # 检查cookie是否属于当前用户
         user_id = current_user['user_id']
         from db_manager import db_manager
-        user_cookies = db_manager.get_all_cookies(user_id)
+        user_cookies = db_manager.get_all_cookies_dict(user_id)
 
         if cookie_id not in user_cookies:
             raise HTTPException(status_code=403, detail="无权限访问该Cookie")
@@ -4491,7 +4491,7 @@ def get_item_detail(cookie_id: str, item_id: str, current_user: Dict[str, Any] =
         # 检查cookie是否属于当前用户
         user_id = current_user['user_id']
         from db_manager import db_manager
-        user_cookies = db_manager.get_all_cookies(user_id)
+        user_cookies = db_manager.get_all_cookies_dict(user_id)
 
         if cookie_id not in user_cookies:
             raise HTTPException(status_code=403, detail="无权限访问该Cookie")
@@ -4522,7 +4522,7 @@ def update_item_detail(
         # 检查cookie是否属于当前用户
         user_id = current_user['user_id']
         from db_manager import db_manager
-        user_cookies = db_manager.get_all_cookies(user_id)
+        user_cookies = db_manager.get_all_cookies_dict(user_id)
 
         if cookie_id not in user_cookies:
             raise HTTPException(status_code=403, detail="无权限操作该Cookie")
@@ -4549,7 +4549,7 @@ def delete_item_info(
         # 检查cookie是否属于当前用户
         user_id = current_user['user_id']
         from db_manager import db_manager
-        user_cookies = db_manager.get_all_cookies(user_id)
+        user_cookies = db_manager.get_all_cookies_dict(user_id)
 
         if cookie_id not in user_cookies:
             raise HTTPException(status_code=403, detail="无权限操作该Cookie")
@@ -4614,7 +4614,7 @@ def get_ai_reply_settings(cookie_id: str, current_user: Dict[str, Any] = Depends
         # 检查cookie是否属于当前用户
         user_id = current_user['user_id']
         from db_manager import db_manager
-        user_cookies = db_manager.get_all_cookies(user_id)
+        user_cookies = db_manager.get_all_cookies_dict(user_id)
 
         if cookie_id not in user_cookies:
             raise HTTPException(status_code=403, detail="无权限访问该Cookie")
@@ -4635,7 +4635,7 @@ def update_ai_reply_settings(cookie_id: str, settings: AIReplySettings, current_
         # 检查cookie是否属于当前用户
         user_id = current_user['user_id']
         from db_manager import db_manager
-        user_cookies = db_manager.get_all_cookies(user_id)
+        user_cookies = db_manager.get_all_cookies_dict(user_id)
 
         if cookie_id not in user_cookies:
             raise HTTPException(status_code=403, detail="无权限操作该Cookie")
@@ -4673,7 +4673,7 @@ def get_all_ai_reply_settings(current_user: Dict[str, Any] = Depends(get_current
         # 只返回当前用户的AI回复设置
         user_id = current_user['user_id']
         from db_manager import db_manager
-        user_cookies = db_manager.get_all_cookies(user_id)
+        user_cookies = db_manager.get_all_cookies_dict(user_id)
 
         all_settings = db_manager.get_all_ai_reply_settings()
         # 过滤只属于当前用户的设置
@@ -5020,7 +5020,7 @@ def get_all_users(admin_user: Dict[str, Any] = Depends(require_admin)):
         for user in users:
             user_id = user['id']
             # 统计用户的Cookie数量
-            user_cookies = db_manager.get_all_cookies(user_id)
+            user_cookies = db_manager.get_all_cookies_dict(user_id)
             user['cookie_count'] = len(user_cookies)
 
             # 统计用户的卡券数量
@@ -5119,7 +5119,7 @@ def get_admin_cookies(admin_user: Dict[str, Any] = Depends(require_admin)):
 
         for user in all_users:
             user_id = user['id']
-            user_cookies = db_manager.get_all_cookies(user_id)
+            user_cookies = db_manager.get_all_cookies_dict(user_id)
             for cookie_id, cookie_value in user_cookies.items():
                 # 获取cookie详细信息
                 cookie_details = db_manager.get_cookie_details(cookie_id)
@@ -5317,7 +5317,7 @@ def get_system_stats(admin_user: Dict[str, Any] = Depends(require_admin)):
         total_users = len(all_users)
 
         # Cookie统计
-        all_cookies = db_manager.get_all_cookies()
+        all_cookies = db_manager.get_all_cookies_dict()
         total_cookies = len(all_cookies)
         
         # 活跃账号统计（启用状态的账号）
@@ -5368,7 +5368,7 @@ def get_all_items(current_user: Dict[str, Any] = Depends(get_current_user)):
         # 只返回当前用户的商品信息
         user_id = current_user['user_id']
         from db_manager import db_manager
-        user_cookies = db_manager.get_all_cookies(user_id)
+        user_cookies = db_manager.get_all_cookies_dict(user_id)
 
         all_items = []
         for cookie_id in user_cookies.keys():
@@ -5386,7 +5386,7 @@ def get_items_by_cookie(cookie_id: str, current_user: Dict[str, Any] = Depends(g
         # 检查cookie是否属于当前用户
         user_id = current_user['user_id']
         from db_manager import db_manager
-        user_cookies = db_manager.get_all_cookies(user_id)
+        user_cookies = db_manager.get_all_cookies_dict(user_id)
 
         if cookie_id not in user_cookies:
             raise HTTPException(status_code=403, detail="无权限访问该Cookie")
@@ -5413,7 +5413,7 @@ def update_item_reply(
         from db_manager import db_manager
 
         # 验证cookie是否属于用户
-        user_cookies = db_manager.get_all_cookies(user_id)
+        user_cookies = db_manager.get_all_cookies_dict(user_id)
         if cookie_id not in user_cookies:
             raise HTTPException(status_code=403, detail="无权限访问该Cookie")
 
@@ -5437,7 +5437,7 @@ def delete_item_reply(cookie_id: str, item_id: str, current_user: Dict[str, Any]
     """
     try:
         user_id = current_user['user_id']
-        user_cookies = db_manager.get_all_cookies(user_id)
+        user_cookies = db_manager.get_all_cookies_dict(user_id)
         if cookie_id not in user_cookies:
             raise HTTPException(status_code=403, detail="无权限访问该Cookie")
 
@@ -5471,7 +5471,7 @@ async def batch_delete_item_reply(
     from db_manager import db_manager
 
     # 先校验当前用户是否有权限删除每个cookie对应的回复
-    user_cookies = db_manager.get_all_cookies(user_id)
+    user_cookies = db_manager.get_all_cookies_dict(user_id)
     for item in req.items:
         if item.cookie_id not in user_cookies:
             raise HTTPException(status_code=403, detail=f"无权限访问Cookie {item.cookie_id}")
@@ -5490,7 +5490,7 @@ def get_item_reply(cookie_id: str, item_id: str, current_user: Dict[str, Any] = 
     try:
         user_id = current_user['user_id']
         # 校验cookie_id是否属于当前用户
-        user_cookies = db_manager.get_all_cookies(user_id)
+        user_cookies = db_manager.get_all_cookies_dict(user_id)
         if cookie_id not in user_cookies:
             raise HTTPException(status_code=403, detail="无权限访问该Cookie")
 
@@ -5909,7 +5909,7 @@ def get_user_orders(current_user: Dict[str, Any] = Depends(get_current_user)):
         log_with_user('info', "查询用户订单信息", current_user)
 
         # 获取用户的所有Cookie
-        user_cookies = db_manager.get_all_cookies(user_id)
+        user_cookies = db_manager.get_all_cookies_dict(user_id)
 
         # 获取所有订单数据
         all_orders = []
@@ -5941,7 +5941,7 @@ def get_order_detail(order_id: str, current_user: Dict[str, Any] = Depends(get_c
         log_with_user('info', f"查询订单详情: {order_id}", current_user)
 
         # 获取用户的所有Cookie
-        user_cookies = db_manager.get_all_cookies(user_id)
+        user_cookies = db_manager.get_all_cookies_dict(user_id)
 
         # 在用户的订单中查找
         for cookie_id in user_cookies.keys():
@@ -5970,7 +5970,7 @@ def delete_order(order_id: str, current_user: Dict[str, Any] = Depends(get_curre
         log_with_user('info', f"删除订单: {order_id}", current_user)
 
         # 获取用户的所有Cookie
-        user_cookies = db_manager.get_all_cookies(user_id)
+        user_cookies = db_manager.get_all_cookies_dict(user_id)
 
         # 验证订单属于当前用户
         order = db_manager.get_order_by_id(order_id)

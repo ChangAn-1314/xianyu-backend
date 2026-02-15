@@ -183,7 +183,7 @@ class DBManager:
                 return None
 
     def get_all_cookies(self, user_id: int = None) -> list:
-        """获取所有Cookie"""
+        """获取所有Cookie（返回列表格式）"""
         with self._session() as session:
             try:
                 query = session.query(CookieAccount)
@@ -207,6 +207,11 @@ class DBManager:
             except Exception as e:
                 logger.error(f"获取所有Cookie失败: {e}")
                 return []
+
+    def get_all_cookies_dict(self, user_id: int = None) -> dict:
+        """获取所有Cookie（返回 {cookie_id: cookie_value} 字典格式，用于快速查找和权限校验）"""
+        cookies_list = self.get_all_cookies(user_id)
+        return {c['id']: c.get('value', '') for c in cookies_list}
 
     def get_cookie_by_id(self, cookie_id: str, user_id: int = None) -> Optional[Dict[str, Any]]:
         """根据ID获取Cookie详情"""
