@@ -1773,7 +1773,7 @@ class DBManager:
                        c.is_multi_spec, c.spec_name, c.spec_value
                 FROM delivery_rules dr
                 LEFT JOIN cards c ON dr.card_id = c.id
-                WHERE dr.enabled = 1 AND c.enabled = 1
+                WHERE dr.enabled = true AND c.enabled = true
                 AND (:kw LIKE '%' || dr.keyword || '%' OR dr.keyword LIKE '%' || :kw || '%')
                 ORDER BY
                     CASE
@@ -1890,9 +1890,9 @@ class DBManager:
                            c.is_multi_spec, c.spec_name, c.spec_value
                     FROM delivery_rules dr
                     LEFT JOIN cards c ON dr.card_id = c.id
-                    WHERE dr.enabled = 1 AND c.enabled = 1
+                    WHERE dr.enabled = true AND c.enabled = true
                     AND (:kw LIKE '%' || dr.keyword || '%' OR dr.keyword LIKE '%' || :kw || '%')
-                    AND c.is_multi_spec = 1 AND c.spec_name = :sn AND c.spec_value = :sv
+                    AND c.is_multi_spec = true AND c.spec_name = :sn AND c.spec_value = :sv
                     ORDER BY
                         CASE WHEN :kw LIKE '%' || dr.keyword || '%' THEN LENGTH(dr.keyword)
                         ELSE LENGTH(dr.keyword) / 2 END DESC,
@@ -1915,9 +1915,9 @@ class DBManager:
                        c.is_multi_spec, c.spec_name, c.spec_value
                 FROM delivery_rules dr
                 LEFT JOIN cards c ON dr.card_id = c.id
-                WHERE dr.enabled = 1 AND c.enabled = 1
+                WHERE dr.enabled = true AND c.enabled = true
                 AND (:kw LIKE '%' || dr.keyword || '%' OR dr.keyword LIKE '%' || :kw || '%')
-                AND (c.is_multi_spec = 0 OR c.is_multi_spec IS NULL)
+                AND (c.is_multi_spec = false OR c.is_multi_spec IS NULL)
                 ORDER BY
                     CASE WHEN :kw LIKE '%' || dr.keyword || '%' THEN LENGTH(dr.keyword)
                     ELSE LENGTH(dr.keyword) / 2 END DESC,
