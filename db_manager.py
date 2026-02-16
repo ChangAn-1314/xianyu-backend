@@ -312,12 +312,15 @@ class DBManager:
                 return 10
 
     def update_cookie_account_info(self, cookie_id: str, username: str = None,
-                                   password: str = None, show_browser: int = None):
-        """更新Cookie账号信息"""
+                                   password: str = None, show_browser: int = None,
+                                   cookie_value: str = None):
+        """更新Cookie账号信息（包括cookie值、用户名、密码、显示浏览器设置）"""
         with self._session() as session:
             try:
                 cookie = session.query(CookieAccount).filter_by(id=cookie_id).first()
                 if cookie:
+                    if cookie_value is not None:
+                        cookie.value = cookie_value
                     if username is not None:
                         cookie.username = username
                     if password is not None:
