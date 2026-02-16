@@ -7497,6 +7497,21 @@ class XianyuLive:
 
             # 判断是否为聊天消息
             if not self.is_chat_message(message):
+                # 非聊天消息也可能是付款卡片更新消息（_CONTENT_MAP_UPDATE_PRE_形式）
+                # 检查消息中是否包含付款关键词，如果是则触发自动发货
+                try:
+                    msg_str = str(message)
+                    payment_indicators = ['我已付款', '已付款，待发货', '等待你发货', 'TRADE_PAID_DONE_SELLER']
+                    is_payment_msg = any(kw in msg_str for kw in payment_indicators)
+                    if is_payment_msg and order_id:
+                        # 从消息中尝试提取商品ID
+                        card_item_id = self.extract_item_id_from_message(message) or item_id
+                        logger.info(f"【{self.cookie_id}】检测到非聊天消息中的付款卡片更新，触发自动发货: order_id={order_id}, item_id={card_item_id}")
+                        await self._handle_auto_delivery(websocket, message, "系统", "system",
+                                                        card_item_id, "", msg_time)
+                        return
+                except Exception as pay_e:
+                    logger.warning(f"检查非聊天消息付款状态失败: {self._safe_str(pay_e)}")
                 logger.warning("非聊天消息")
                 return
 
