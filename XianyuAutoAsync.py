@@ -2040,8 +2040,7 @@ class XianyuLive:
                     # 这个方法会自动处理新账号和现有账号的情况，不会覆盖账号密码
                     success = db_manager.update_cookie_account_info(
                         self.cookie_id, 
-                        cookie_value=self.cookies_str,
-                        user_id=current_user_id  # 如果是新账号，需要提供user_id
+                        cookie_value=self.cookies_str
                     )
                     if not success:
                         # 如果更新失败，记录错误但不使用 save_cookie（避免覆盖账号密码）
