@@ -365,12 +365,18 @@ class OrderDetailFetcher:
             包含规格名称和规格值的字典，如果解析失败则返回空字典
         """
         try:
-            if not sku_content or ':' not in sku_content:
+            if not sku_content:
+                logger.warning(f"SKU内容为空")
+                return {}
+
+            # 兼容全角冒号和半角冒号
+            normalized = sku_content.replace('：', ':')
+            if ':' not in normalized:
                 logger.warning(f"SKU内容格式无效或不包含冒号: {sku_content}")
                 return {}
 
             # 根据冒号分割
-            parts = sku_content.split(':', 1)  # 只分割第一个冒号
+            parts = normalized.split(':', 1)  # 只分割第一个冒号
 
             if len(parts) == 2:
                 spec_name = parts[0].strip()
@@ -521,14 +527,93 @@ class OrderDetailFetcher:
                     logger.info("未找到sku--u_ddZval元素，数量默认设置为1")
                     print("📦 数量默认设置为: 1")
 
-                # 尝试获取页面的所有class包含sku的元素进行调试
-                all_sku_elements = await self.page.query_selector_all('[class*="sku"]')
-                if all_sku_elements:
-                    logger.info(f"找到 {len(all_sku_elements)} 个包含'sku'的元素")
-                    for i, element in enumerate(all_sku_elements):
-                        class_name = await element.get_attribute('class')
-                        text_content = await element.text_content()
-                        logger.info(f"SKU元素 {i+1}: class='{class_name}', text='{text_content}'")
+                # 回退方案：使用JavaScript遍历DOM提取规格和数量信息
+                try:
+                    js_result = await self.page.evaluate("""() => {
+                        const result = {spec_text: '', quantity_text: '', all_texts: []};
+                        // 获取页面所有文本节点，查找"key:value"或"key：value"模式
+                        const walker = document.createTreeWalker(document.body, NodeFilter.SHOW_TEXT, null, false);
+                        const texts = [];
+                        while (walker.nextNode()) {
+                            const text = walker.currentNode.textContent.trim();
+                            if (text && text.length > 0 && text.length < 100) {
+                                texts.push(text);
+                            }
+                        }
+                        // 查找包含冒号的文本（可能是规格信息）
+                        for (const text of texts) {
+                            if ((text.includes(':') || text.includes('：')) && !text.includes('http')) {
+                                const colonIdx = text.indexOf(':') !== -1 ? text.indexOf(':') : text.indexOf('：');
+                                const key = text.substring(0, colonIdx).trim();
+                                const value = text.substring(colonIdx + 1).trim();
+                                // 排除时间格式和常见非规格文本
+                                if (key && value && key.length < 20 && value.length < 50
+                                    && !key.match(/^\\d{2,4}$/) && !value.match(/^\\d{2}:\\d{2}/)) {
+                                    result.all_texts.push({key, value, full: text});
+                                    // 判断是数量还是规格
+                                    if (key.includes('数量') || key.includes('件数')) {
+                                        result.quantity_text = value;
+                                    } else if (!result.spec_text && !key.includes('订单') && !key.includes('运费')
+                                               && !key.includes('实付') && !key.includes('编号')
+                                               && !key.includes('时间') && !key.includes('备注')) {
+                                        result.spec_text = text;
+                                    }
+                                }
+                            }
+                        }
+                        return result;
+                    }""")
+
+                    if js_result:
+                        logger.info(f"JS回退提取结果: spec={js_result.get('spec_text')}, qty={js_result.get('quantity_text')}, all={js_result.get('all_texts', [])}")
+                        print(f"🔍 JS回退提取: {js_result}")
+
+                        # 处理规格信息
+                        spec_text = js_result.get('spec_text', '')
+                        if spec_text:
+                            parsed_spec = self._parse_sku_content(spec_text)
+                            if parsed_spec:
+                                result.update(parsed_spec)
+                                logger.info(f"JS回退成功提取规格: {parsed_spec}")
+
+                        # 处理数量信息
+                        qty_text = js_result.get('quantity_text', '')
+                        if qty_text:
+                            qty_clean = qty_text.strip().lstrip('x').lstrip('X')
+                            if qty_clean.isdigit():
+                                result['quantity'] = qty_clean
+                                logger.info(f"JS回退成功提取数量: {qty_clean}")
+
+                except Exception as js_e:
+                    logger.warning(f"JS回退提取失败: {js_e}")
+
+                # 回退方案2：尝试更多CSS选择器
+                if 'spec_name' not in result:
+                    fallback_selectors = [
+                        '[class*="sku"]', '[class*="Sku"]',
+                        '[class*="spec"]', '[class*="Spec"]',
+                        '[class*="attr"]', '[class*="Attr"]',
+                        '[class*="prop"]', '[class*="Prop"]',
+                        '[class*="detail"] [class*="item"]',
+                        '[class*="order"] [class*="info"]',
+                    ]
+                    for sel in fallback_selectors:
+                        try:
+                            els = await self.page.query_selector_all(sel)
+                            if els:
+                                logger.info(f"回退选择器 '{sel}' 找到 {len(els)} 个元素")
+                                for el in els[:10]:
+                                    txt = await el.text_content()
+                                    if txt and ':' in txt and len(txt) < 100:
+                                        parsed = self._parse_sku_content(txt.strip())
+                                        if parsed:
+                                            result.update(parsed)
+                                            logger.info(f"回退选择器 '{sel}' 成功提取: {parsed}")
+                                            break
+                                if 'spec_name' in result:
+                                    break
+                        except Exception:
+                            pass
 
             # 确保数量字段存在，如果不存在则设置为1
             if 'quantity' not in result:
