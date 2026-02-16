@@ -1818,8 +1818,7 @@ async def _execute_password_login(session_id: str, account_id: str, account: str
                     cookie_value=cookies_str,
                     username=account,
                     password=password,
-                    show_browser=show_browser,
-                    user_id=user_id  # 新账号时需要提供user_id
+                    show_browser=show_browser
                 )
                 
                 if update_success:
