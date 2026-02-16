@@ -1220,6 +1220,8 @@ class XianyuLive:
                         for i, delivery_content in enumerate(delivery_contents):
                             try:
                                 # 检查是否是图片发送标记
+                                if not isinstance(delivery_content, str):
+                                    delivery_content = str(delivery_content)
                                 if delivery_content.startswith("__IMAGE_SEND__"):
                                     # 提取卡券ID和图片URL
                                     image_data = delivery_content.replace("__IMAGE_SEND__", "")
@@ -4784,6 +4786,8 @@ class XianyuLive:
         """处理发货内容和备注信息，实现变量替换"""
         try:
             # 如果是图片发送标记，不进行备注处理，直接返回
+            if not isinstance(delivery_content, str):
+                delivery_content = str(delivery_content)
             if delivery_content.startswith("__IMAGE_SEND__"):
                 return delivery_content
             
@@ -4874,7 +4878,10 @@ class XianyuLive:
                     result = json.loads(response_text)
                     # 如果返回的是对象，尝试提取常见的内容字段
                     if isinstance(result, dict):
-                        content = result.get('data') or result.get('content') or result.get('card') or str(result)
+                        content = result.get('data') or result.get('content') or result.get('card') or result
+                        # 确保content是字符串，API返回的data/content可能仍是dict
+                        if not isinstance(content, str):
+                            content = json.dumps(content, ensure_ascii=False)
                     else:
                         content = str(result)
                 except:
