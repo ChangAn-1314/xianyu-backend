@@ -17,7 +17,7 @@ jobs:
           script: |
             cd /root/xianyu-backend
             git pull origin main
-            docker build -t xianyu-backend:latest .
+            docker build -f Dockerfile.backend -t xianyu-backend:latest .
             docker rm -f xianyu-backend
             docker run -d \
               --name xianyu-backend \
