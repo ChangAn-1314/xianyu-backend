@@ -383,21 +383,39 @@ class DBManager:
                 logger.error(f"保存带商品ID的关键词失败: {e}")
                 raise
 
-    def save_text_keywords_only(self, cookie_id: str, keywords: dict):
-        """仅保存文本类型关键词，不影响图片关键词"""
+    def save_text_keywords_only(self, cookie_id: str, keywords):
+        """仅保存文本类型关键词，不影响图片关键词
+        
+        Args:
+            cookie_id: Cookie ID
+            keywords: list of tuples [(keyword, reply, item_id), ...] 或 dict {keyword: reply}
+        """
         with self._session() as session:
             try:
-                # 只删除文本类型且没有item_id的关键词
+                # 删除该cookie_id的所有文本类型关键词（含带item_id和不带item_id的）
                 session.query(Keyword).filter(
                     Keyword.cookie_id == cookie_id,
-                    Keyword.type == 'text',
-                    or_(Keyword.item_id == None, Keyword.item_id == '')
+                    Keyword.type == 'text'
                 ).delete(synchronize_session='fetch')
-                for keyword, reply in keywords.items():
-                    kw = Keyword(cookie_id=cookie_id, keyword=keyword, reply=reply, type='text')
-                    session.add(kw)
+                
+                # 兼容 list of tuples 和 dict 两种格式
+                if isinstance(keywords, dict):
+                    for keyword, reply in keywords.items():
+                        kw = Keyword(cookie_id=cookie_id, keyword=keyword, reply=reply, type='text')
+                        session.add(kw)
+                else:
+                    for item in keywords:
+                        keyword, reply = item[0], item[1]
+                        item_id = item[2] if len(item) > 2 else None
+                        kw = Keyword(
+                            cookie_id=cookie_id, keyword=keyword, reply=reply,
+                            item_id=item_id, type='text'
+                        )
+                        session.add(kw)
+                
                 session.commit()
                 logger.debug(f"保存文本关键词: {cookie_id}, 数量: {len(keywords)}")
+                return True
             except Exception as e:
                 session.rollback()
                 logger.error(f"保存文本关键词失败: {e}")
@@ -2750,12 +2768,15 @@ class DBManager:
                 items = []
                 for r, i in results:
                     items.append({
+                        'id': str(r.id),
                         'item_id': r.item_id, 'cookie_id': r.cookie_id,
+                        'reply': r.reply_content,
                         'reply_content': r.reply_content,
+                        'title': i.item_title if i else None,
+                        'item_title': i.item_title if i else None,
+                        'item_detail': i.item_detail if i else None,
                         'created_at': str(r.created_at) if r.created_at else None,
                         'updated_at': str(r.updated_at) if r.updated_at else None,
-                        'item_title': i.item_title if i else None,
-                        'item_detail': i.item_detail if i else None
                     })
                 return items
         except Exception as e:
