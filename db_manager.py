@@ -2919,6 +2919,21 @@ class DBManager:
             logger.error(f"删除风控日志失败: {e}")
             return False
 
+    def clear_risk_control_logs(self, cookie_id: str = None) -> int:
+        """批量清空风控日志"""
+        try:
+            with self._session() as session:
+                query = session.query(RiskControlLog)
+                if cookie_id:
+                    query = query.filter(RiskControlLog.cookie_id == cookie_id)
+                count = query.delete()
+                session.commit()
+                logger.info(f"批量清空风控日志: {count} 条")
+                return count
+        except Exception as e:
+            logger.error(f"批量清空风控日志失败: {e}")
+            return 0
+
     def cleanup_old_data(self, days: int = 90) -> dict:
         """清理过期的历史数据，防止数据库无限增长"""
         try:

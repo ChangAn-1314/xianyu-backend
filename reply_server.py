@@ -2024,6 +2024,7 @@ async def password_login(
         return {'success': False, 'message': f'登录失败: {str(e)}'}
 
 
+@api_router.get("/password-login/status/{session_id}")
 @api_router.get("/password-login/check/{session_id}")
 async def check_password_login_status(
     session_id: str,
@@ -4827,6 +4828,7 @@ async def get_log_stats(_: None = Depends(require_auth)):
         return {"success": False, "message": f"获取日志统计失败: {str(e)}", "stats": {}}
 
 
+@api_router.post("/admin/logs/clear")
 @api_router.post("/logs/clear")
 async def clear_logs(_: None = Depends(require_auth)):
     """清空日志"""
@@ -5096,6 +5098,22 @@ async def get_admin_risk_control_logs(
     except Exception as e:
         log_with_user('error', f"查询风控日志失败: {str(e)}", admin_user)
         return {"success": False, "message": f"查询失败: {str(e)}", "data": [], "total": 0}
+
+
+@api_router.delete('/admin/risk-control-logs')
+async def clear_admin_risk_control_logs(
+    cookie_id: str = None,
+    admin_user: Dict[str, Any] = Depends(require_admin)
+):
+    """批量清空风控日志（管理员专用）"""
+    try:
+        log_with_user('info', f"批量清空风控日志: cookie_id={cookie_id}", admin_user)
+        count = db_manager.clear_risk_control_logs(cookie_id=cookie_id)
+        log_with_user('info', f"风控日志清空成功，删除 {count} 条记录", admin_user)
+        return {"success": True, "message": f"已清空 {count} 条风控日志"}
+    except Exception as e:
+        log_with_user('error', f"清空风控日志失败: {str(e)}", admin_user)
+        return {"success": False, "message": f"清空失败: {str(e)}"}
 
 
 @api_router.get('/admin/cookies')
